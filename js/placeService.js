@@ -1,63 +1,41 @@
 'use strict'
 
-function getPosition() {
-    if (!navigator.geolocation) {
-        alert("HTML5 Geolocation is not supported in your browser.");
-        return;
+let map, infoWindow;
+
+initMap();
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 29.558020994614, lng: 34.95251812914005},
+    zoom: 10,
+  });
+  infoWindow = new google.maps.InfoWindow();
+  const locationButton = document.createElement("button");
+  locationButton.textContent = "Pan to Current Location";
+  locationButton.classList.add("custom-map-control-button");
+  map.controls[google.maps.ControlPosition.TOP_CENTER].push(locationButton);
+  locationButton.addEventListener("click", () => {
+    // Try HTML5 geolocation.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          infoWindow.setPosition(pos);
+          infoWindow.setContent("Location found.");
+          infoWindow.open(map);
+          map.setCenter(pos);
+        },
+        () => {
+          handleLocationError(true, infoWindow, map.getCenter());
+        }
+      );
+    } else {
+      // Browser doesn't support Geolocation
+      handleLocationError(false, infoWindow, map.getCenter());
     }
-
-    // One shot position getting or continus watch
-    navigator.geolocation.getCurrentPosition(showLocation, handleLocationError);
-    // navigator.geolocation.watchPosition(showLocation, handleLocationError);
+  });
 }
 
-function showLocation(position) {
-    console.log(position);
-    document.getElementById("latitude").innerHTML = position.coords.latitude;
-    document.getElementById("longitude").innerHTML = position.coords.longitude;
-    document.getElementById("accuracy").innerHTML = position.coords.accuracy;
-
-    var date = new Date(position.timestamp);
-    document.getElementById("timestamp").innerHTML = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
-    initMap(position.coords.latitude, position.coords.longitude);
-}
-
-function handleLocationError(error) {
-    var locationError = document.getElementById("locationError");
-
-    switch (error.code) {
-        case 0:
-            locationError.innerHTML = "There was an error while retrieving your location: " + error.message;
-            break;
-        case 1:
-            locationError.innerHTML = "The user didn't allow this page to retrieve a location.";
-            break;
-        case 2:
-            locationError.innerHTML = "The browser was unable to determine your location: " + error.message;
-            break;
-        case 3:
-            locationError.innerHTML = "The browser timed out before retrieving the location.";
-            break;
-    }
-}
-
-function initMap(lat, lng) {
-    //            if (!lat) lat = 32.0749831;
-    //            if (!lng) lat = 34.9120554;
-    var elMap = document.querySelector('#map');
-    var options = {
-        center: { lat, lng },
-        zoom: 16
-    };
-
-    const map = new google.maps.Map(
-        elMap,
-        options
-    );
-
-    const marker = new google.maps.Marker({
-        position: { lat, lng },
-        map,
-        title: 'Hello World!'
-    });
-}
